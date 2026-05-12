@@ -1,27 +1,27 @@
-# Latest WordPress use karo (safe wala)
+﻿# Use latest WordPress (NOT old 5.8!)
 FROM wordpress:latest
 
-# Root ban ke update karo
+# Switch to root to install updates
 USER root
 
-# Sab kuch update karo
+# Update everything to latest versions!
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y curl && \
     apt-get clean
 
-# Dangerous tools hatao
+# Remove dangerous tools that attackers could use
 RUN apt-get remove -y --purge gcc make && \
     apt-get autoremove -y
 
-# Naya safe user banao (not root!)
+# Create a NON-ROOT user (super important!)
 RUN adduser --disabled-password --gecos '' wordpress-user
 
-# Permissions fix karo
+# Fix permissions for safe running
 RUN chown -R wordpress-user:wordpress-user /var/www/html
 
-# Safe user pe switch karo
+# Switch to safe user (not root!)
 USER wordpress-user
 
-# Health check dalo (robot check karega sab theek hai)
+# Add health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost/ || exit 1
