@@ -1,0 +1,33 @@
+name: Bug Finder Robot
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  find-bugs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start website
+        run: |
+          docker-compose -f docker/docker-compose.yml up -d
+          sleep 30
+
+      - name: Install bug finder
+        run: |
+          sudo gem install wpscan
+
+      - name: Find bugs
+        run: |
+          mkdir -p scans
+          wpscan --url http://localhost:8080 --format json --output scans/bugs.json
+
+      - name: Save bug report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bug-report
+          path: scans/
