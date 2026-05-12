@@ -1,4 +1,4 @@
-name: Bug Finder Robot
+name: Bug Finder Robot - Hardened Version
 
 on:
   push:
@@ -6,33 +6,36 @@ on:
   workflow_dispatch:
 
 jobs:
-  find-bugs:
+  scan-hardened:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install docker-compose -y
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Start website
+      - name: Pull hardened image from Docker Hub
         run: |
-          sudo docker-compose -f docker/docker-compose.yml up -d
-          sleep 30
+          docker pull abdulbasit1701/wordpress-hardened:latest
 
-      - name: Install bug finder
+      - name: Setup network and run containers
         run: |
-          sudo gem install wpscan
+          docker network create wp-network || true
+          docker run -d --name mysql-hardened -e MYSQL_ROOT_PASSWORD=rootpass -e MYSQL_DATABASE=wordpress -e MYSQL_USER=wordpress -e MYSQL_PASSWORD=wordpress --network wp-network mysql:8.0
+          docker run -d --name wordpress-hardened -p 8080:80 --network wp-network abdulbasit1701/wordpress-hardened:latest
+          sleep 35
 
-      - name: Find bugs (even without install)
+      - name: Run WPScan on hardened image
         run: |
           mkdir -p scans
-          sudo wpscan --url http://localhost:8080 --format json --output scans/bugs.json --no-banner --detection-mode aggressive
+          docker run --rm --network host wpscanteam/wpscan --url http://localhost:8080 --format json --output scans/hardened-scan.json --no-banner || true
 
-      - name: Save bug report
+      - name: Upload scan results
         uses: actions/upload-artifact@v4
         with:
-          name: bug-report
+          name: hardened-scan-results
           path: scans/
