@@ -12,9 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install docker-compose -y
+
       - name: Start website
         run: |
-          docker-compose -f docker/docker-compose.yml up -d
+          sudo docker-compose -f docker/docker-compose.yml up -d
           sleep 30
 
       - name: Install bug finder
@@ -24,7 +29,7 @@ jobs:
       - name: Find bugs
         run: |
           mkdir -p scans
-          wpscan --url http://localhost:8080 --format json --output scans/bugs.json
+          sudo wpscan --url http://localhost:8080 --format json --output scans/bugs.json --no-banner
 
       - name: Save bug report
         uses: actions/upload-artifact@v4
