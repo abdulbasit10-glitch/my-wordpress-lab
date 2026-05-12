@@ -20,32 +20,16 @@ jobs:
       - name: Start website
         run: |
           sudo docker-compose -f docker/docker-compose.yml up -d
-          sleep 10
-
-      - name: Install WordPress automatically
-        run: |
-          sudo docker exec $(sudo docker ps -q --filter "name=wordpress") wp core install \
-            --url="http://localhost:8080" \
-            --title="Test Site" \
-            --admin_user="admin" \
-            --admin_password="admin123" \
-            --admin_email="admin@example.com" \
-            --allow-root
-          sleep 5
-
-      - name: Install WP-CLI (WordPress command line)
-        run: |
-          sudo docker exec $(sudo docker ps -q --filter "name=wordpress") apt-get update
-          sudo docker exec $(sudo docker ps -q --filter "name=wordpress") apt-get install -y less
+          sleep 30
 
       - name: Install bug finder
         run: |
           sudo gem install wpscan
 
-      - name: Find bugs
+      - name: Find bugs (even without install)
         run: |
           mkdir -p scans
-          sudo wpscan --url http://localhost:8080 --format json --output scans/bugs.json --no-banner
+          sudo wpscan --url http://localhost:8080 --format json --output scans/bugs.json --no-banner --detection-mode aggressive
 
       - name: Save bug report
         uses: actions/upload-artifact@v4
